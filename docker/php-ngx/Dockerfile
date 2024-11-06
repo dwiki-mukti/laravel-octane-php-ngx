@@ -31,17 +31,18 @@ RUN sed -i "s|opcache.jit=off|;opcache.jit=off|g" /etc/php/8.3/embed/conf.d/10-o
 
 # copy app
 ENV APP_DIR=app
-COPY --link . $APP_DIR
+COPY . /$APP_DIR
+COPY ./docker/php-ngx/plugin/Ngx /$APP_DIR/app/Ngx
 
 # install laravel dependencies
 COPY --from=composer:2.2 /usr/bin/composer /usr/bin/composer
-RUN cd $APP_DIR && composer install --no-interaction --prefer-dist --no-dev
+RUN cd /$APP_DIR && composer install --no-interaction --prefer-dist --no-dev
 
 # multi worker
 RUN export WORKERS=$(( 4 * $(nproc) )) && \
-    sed -i "s|worker_processes  auto|worker_processes $WORKERS|g" /$APP_DIR/deploy/nginx.conf
+    sed -i "s|worker_processes  auto|worker_processes $WORKERS|g" /$APP_DIR/docker/php-ngx/configs/nginx.conf
 
 # launch
 EXPOSE 8000
-CMD /nginx/sbin/nginx -c /$APP_DIR/deploy/nginx.conf
+CMD /nginx/sbin/nginx -c /$APP_DIR/docker/php-ngx/configs/nginx.conf
 # CMD cd $APP_DIR && php artisan serve --host=0.0.0.0 --port=8000

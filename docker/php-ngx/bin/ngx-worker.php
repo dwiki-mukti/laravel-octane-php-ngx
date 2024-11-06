@@ -7,13 +7,13 @@ use Laravel\Octane\Worker;
 
 ini_set('memory_limit', '-1');
 
-require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../../../vendor/autoload.php';
 
 $_ENV['APP_ENV'] = 'prod';
-$_ENV['APP_BASE_PATH'] = __DIR__ . '/../../';
+$_ENV['APP_BASE_PATH'] = __DIR__ . '/../../../';
 $_ENV['LARAVEL_OCTANE'] = 1;
 
-$basePath = require __DIR__ . '/../../vendor/laravel/octane/bin/bootstrap.php';
+$basePath = require __DIR__ . '/../../../vendor/laravel/octane/bin/bootstrap.php';
 
 $ngxClient = new NgxClient();
 
