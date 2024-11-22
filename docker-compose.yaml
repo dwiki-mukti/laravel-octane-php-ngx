@@ -1,15 +1,13 @@
 version: '3'
 
 services:
-    ngx:
-        container_name: ngx
-        image: ngx
+    laravel_octane:
+        container_name: laravel_octane
+        image: laravel_octane
         build:
             context: .
             dockerfile: ./docker/${DOCKER_RUNTIME-php-ngx}/Dockerfile
         ports:
-            - ${DOCKER_EXPOSE_PORT-8000}:8000
+            - ${DOCKER_EXPOSE_PORT-8000}:${DOCKER_SOURCE_PORT-8000}
         env_file:
             - .env
-        volumes:
-            - ./:/app
