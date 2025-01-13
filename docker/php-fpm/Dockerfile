@@ -1,62 +1,63 @@
-# Use the official PHP image as a base
-FROM php:8.3-fpm-alpine
-ENV APP_DIR="/var/www"
+# Stage pertama: Menggunakan image php:8.3-fpm-alpine sebagai base image
+FROM php:8.3-fpm-alpine AS base
 
-# Install Composer
+# Install dependensi yang diperlukan untuk Laravel
+RUN apk add bash
+RUN apk add libpng-dev
+RUN apk add libjpeg-turbo-dev 
+RUN apk add freetype-dev
+RUN apk add libzip-dev
+# RUN apk add zlib-dev
+RUN apk add libxml2-dev
+RUN apk add oniguruma-dev
+RUN apk add curl git
+RUN apk add libwebp-dev
+
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp --enable-gd
+RUN docker-php-ext-install gd pdo pdo_mysql mbstring xml zip opcache
+
+# Stage kedua: Meng-copy Composer dari image composer:2.2
+FROM composer:2.2 AS composer
+
+# Stage ketiga: Meng-copy Nginx dari image nginx:alpine
+FROM nginx:alpine AS nginx
+
+# Stage keempat: Menggabungkan semua komponen dari stage sebelumnya
+FROM base
+
+# Copy Composer dari image composer:2.2
 COPY --from=composer:2.2 /usr/bin/composer /usr/bin/composer
 
-# Install extension
-RUN apk --no-cache add libzip-dev
-RUN apk --no-cache add libjpeg-turbo-dev
-RUN apk --no-cache add libpng-dev
-RUN apk --no-cache add libxml2-dev
-RUN apk --no-cache add libwebp-dev
-RUN apk --no-cache add freetype-dev
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp --enable-gd
+# Copy Nginx dari image nginx:alpine
+COPY --from=nginx:alpine /usr/sbin/nginx /usr/sbin/nginx
+COPY --from=nginx:alpine /etc/nginx /etc/nginx
+COPY --from=nginx:alpine /usr/share/nginx /usr/share/nginx
 
-RUN apk --no-cache add php-gd
-RUN apk --no-cache add php-dom 
-RUN apk --no-cache add php-fileinfo
-RUN apk --no-cache add php-session
-RUN apk --no-cache add php-tokenizer
-RUN apk --no-cache add php-xml
-RUN apk --no-cache add php-simplexml
-RUN apk --no-cache add php-xmlwriter
-RUN apk --no-cache add php-xmlreader
-RUN apk --no-cache add php-pdo
-
-# Clear cache
-RUN rm -rf /var/cache/apk/*
-
-# Install PHP extensions
-RUN docker-php-ext-install gd
-RUN docker-php-ext-install zip
-
-# Driver DB connection
-# RUN apk --no-cache add postgresql-dev
-# RUN apk --no-cache add php-pgsql
-# RUN apk --no-cache add php-pdo_pgsql
-
-# RUN docker-php-ext-install pgsql
-# RUN docker-php-ext-install pdo_pgsql
-
-# Set working directory
-WORKDIR $APP_DIR
-
-# Copy existing application directory contents
+# Salin file Laravel ke dalam container
+WORKDIR /var/www
 COPY . .
 
-# Install dependensi Laravel
-RUN composer install --no-interaction --prefer-dist
+# Install dependensi Laravel menggunakan Composer
+RUN composer install --no-dev --optimize-autoloader --prefer-dist
 
-# Copy existing application directory permissions
-COPY --chown=www-data:www-data . $APP_DIR
+# Set permission untuk folder storage dan bootstrap/cache
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-# Change current user to www
-USER www-data
+# Salin konfigurasi Nginx ke dalam container
+COPY ./docker/php-fpm/config/default.conf /etc/nginx/conf.d/
+COPY ./docker/php-fpm/config/nginx.conf /etc/nginx/
 
-# Expose the container's port
-EXPOSE 8000
+# Tambahkan user nginx ke dalam container
+RUN addgroup -g 101 nginx && adduser -u 101 -G nginx -D nginx
 
-# Define the command to run when the container starts
-CMD php artisan serve --host=0.0.0.0 --port=8000
+# Membuat direktori untuk log Nginx
+RUN mkdir -p /var/log/nginx
+
+# Buat direktori cache dan atur izin
+RUN mkdir -p /var/cache/nginx/client_temp
+
+# Expose port 80 untuk Nginx
+EXPOSE 80
+
+# Jalankan PHP-FPM dan Nginx di background
+CMD php-fpm & nginx -g "daemon off;"

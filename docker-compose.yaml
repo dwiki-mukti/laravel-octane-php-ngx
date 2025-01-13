@@ -2,8 +2,8 @@ version: '3'
 
 services:
     laravel_octane:
-        container_name: laravel_octane
-        image: laravel_octane
+        container_name: laravel-${DOCKER_RUNTIME-php-ngx}
+        image: laravel-${DOCKER_RUNTIME-php-ngx}
         build:
             context: .
             dockerfile: ./docker/${DOCKER_RUNTIME-php-ngx}/Dockerfile
