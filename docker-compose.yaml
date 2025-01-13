@@ -11,3 +11,8 @@ services:
             - ${DOCKER_EXPOSE_PORT-8000}:${DOCKER_SOURCE_PORT-8000}
         env_file:
             - .env
+        deploy:
+            resources:
+                limits:
+                    memory: 512M
+                    cpus: '1'
