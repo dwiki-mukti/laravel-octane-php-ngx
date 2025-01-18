@@ -35,8 +35,8 @@ COPY --chown=www-data:www-data . /$APP_DIR
 COPY ./docker/php-ngx/plugin/Ngx /$APP_DIR/app/Ngx
 
 # install laravel dependencies
-COPY --from=composer:2.2 /usr/bin/composer /usr/bin/composer
-RUN cd /$APP_DIR && composer install --no-interaction --prefer-dist --no-dev
+# COPY --from=composer:2.2 /usr/bin/composer /usr/bin/composer
+# RUN cd /$APP_DIR && composer install --no-interaction --prefer-dist --no-dev
 
 # multi worker
 # RUN export WORKERS=$(( 4 * $(nproc) )) && \
